@@ -351,7 +351,8 @@ object MavenCentral:
         sonatype =>
           ZIO.scoped:
             defer:
-              val response = sonatype.client.post(s"/api/v1/publisher/status?id=$deploymentId")(Body.empty).run
+              val request = Request.post(s"/api/v1/publisher/status", Body.empty).addQueryParam("id", deploymentId)
+              val response = sonatype.client.request(request).run
               val statusResponse = response.body.asJson[StatusResponse].run
               statusResponse.deploymentState
 
@@ -375,9 +376,8 @@ object MavenCentral:
             defer:
               val deploymentId = MavenCentral.Deploy.upload(filename, zip).run
 
-              val status = MavenCentral.Deploy.checkStatus(deploymentId)
-                .filterOrFail(_.isFinal)(IllegalStateException("Waiting on final deployment status")) // todo: add current state to error
-                .retry(Schedule.exponential(1.second))
+              val (_, status) = MavenCentral.Deploy.checkStatus(deploymentId)
+                .repeat(Schedule.exponential(1.second) && Schedule.recurUntil(_.isFinal))
                 .timeout(5.minutes)
                 .someOrFail(RuntimeException("Timed out waiting for deployment to finish processing"))
                 .run

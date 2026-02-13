@@ -189,6 +189,13 @@ object MavenCentralSpec extends ZIOSpecDefault:
             .run
 
           assertTrue(status == MavenCentral.Deploy.DeploymentState.VALIDATED)
+//      , test("upload and publish"):
+//        val filename = "tailwindcss-4.1.15.zip"
+//        val zip = getClass.getResourceAsStream(s"/$filename").nn.readAllBytes()
+//
+//        defer:
+//          MavenCentral.Deploy.uploadVerifyAndPublish(filename, zip).run
+//          assertCompletes
     ).provide(Client.default.update(_ @@ ZClientAspect.requestLogging()), MavenCentral.Deploy.Sonatype.Live) @@ TestAspect.ifEnvSet("OSS_DEPLOY_USERNAME") @@ TestAspect.ifEnvSet("OSS_DEPLOY_PASSWORD") @@ TestAspect.withLiveSystem @@ TestAspect.withLiveClock
   )
 
